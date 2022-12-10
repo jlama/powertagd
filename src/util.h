@@ -140,4 +140,21 @@ static const char *key2str(uint8_t k[16])
 	return str;
 }
 
+#ifdef __linux__
+#include <sys/random.h>
+
+static void arc4random_buf(void *buf, size_t nbytes)
+{
+	ssize_t r = getrandom(buf, nbytes, 0);
+	assert(r == nbytes);
+}
+
+static uint32_t arc4random(void)
+{
+	uint32_t v;
+	arc4random_buf(&v, sizeof(v));
+	return v;
+}
+#endif
+
 #endif

@@ -27,12 +27,11 @@ format. The output is intended to be piped to another app to process the data as
 1. Flash the firmware to the dongle. You can either use the built-in bootloader
 and upload the `ncp-uart-hw-gp-multi-rail.gbl` file, or flash the
 `ncp-uart-hw-gp-multi-rail.s37` file directly with a JTAG debugger.<br>
-__Warning:__ Be prepared to hook a JTAG debugger to recover the device if anything goes wrong.
+__Warning:__ Be prepared to hook a JTAG debugger to recover the dongle if anything goes wrong.<br>
 Check out [elelabs-zigbee-ezsp-utility](https://github.com/Elelabs/elelabs-zigbee-ezsp-utility)
 to use the bootloader method (untested).
 
-2. Build `powertagd` with `make`. This has only been tested on macOS
-and may require some fixes to build on Linux or other systems.
+2. Build `powertagd` with `make`.
 
 3. Connect the USB dongle and determine where it was mapped in `/dev`.<br>
 On Linux it should be something like `/dev/ttyACM0`<br>

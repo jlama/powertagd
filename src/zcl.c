@@ -406,8 +406,8 @@ static int zcl_parse_num_value(const uint8_t *buf, size_t len,
 		return -1;
 	}
 
-	uint64_t u;
-	int64_t i;
+	uint64_t u = 0;
+	int64_t i = 0;
 	switch (bytes) {
 	case 1:
 		u = buf[0];
@@ -660,11 +660,11 @@ const char *zcl_attr_format_value(ZclAttr *attr)
 		return (attr->value.b) ? "true" : "false";
 
 	case ZCL_ATTR_TYPE_U64:
-		snprintf(buf, sizeof(buf), "%llu", attr->value.u64);
+		snprintf(buf, sizeof(buf), "%llu", (unsigned long long)attr->value.u64);
 		return buf;
 
 	case ZCL_ATTR_TYPE_S64:
-		snprintf(buf, sizeof(buf), "%lld", attr->value.i64);
+		snprintf(buf, sizeof(buf), "%lld", (long long)attr->value.i64);
 		return buf;
 
 	case ZCL_ATTR_TYPE_FLOAT_32:

@@ -643,7 +643,7 @@ int main(int argc, char **argv)
 		break;
 	}
 	// Line-buffered stdout
-	assert(setlinebuf(stdout) == 0);
+	setlinebuf(stdout);
 
 	serial_open(serialdev, BAUDRATE);
 

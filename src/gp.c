@@ -116,7 +116,7 @@ static void gp_log_frame(LogLevel lvl, GpFrame *f)
 		    f->seq_num, gpf_source_id(f), f->gpd_link, autocom, rx_after_tx);
 	else
 		log_msg(lvl, "gp:   [%d] ieee_id: 0x%08llX, link: %d, auto_commissioning: %c, rx_after_tx: %c",
-		    f->seq_num, f->addr.id.ieee_addr, f->gpd_link, autocom, rx_after_tx);
+		    f->seq_num, (unsigned long long)f->addr.id.ieee_addr, f->gpd_link, autocom, rx_after_tx);
 
 	log_msg(lvl, "gp:   [%d] security_lvl: 0x%02X, key_type: 0x%02X, frame_counter: %d, mic: 0x%04x",
 	    f->seq_num, f->sec_lvl, f->key_type, f->sec_frame_counter, f->mic);
