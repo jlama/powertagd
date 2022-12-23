@@ -60,6 +60,9 @@ On macOS it should be something like `/dev/cu.usbmodemXXXXXXXX`
     Energy scan result: channel 26: -88 dBm
     ```
 
+__Warning:__ For now, please prefer choosing chanel 11, powertagd don't work well with other channel.<br>
+
+
 5. Create a ZigBee network on your preferred channel:
     ```
     powertagd -d /dev/xxx create <channel>
