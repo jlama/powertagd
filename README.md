@@ -28,8 +28,8 @@ format. The output is intended to be piped to another app to process the data as
 and upload the `ncp-uart-hw-gp-multi-rail.gbl` file, or flash the
 `ncp-uart-hw-gp-multi-rail.s37` file directly with a JTAG debugger.<br>
 __Warning:__ Be prepared to hook a JTAG debugger to recover the dongle if anything goes wrong.<br>
-Check out [elelabs-zigbee-ezsp-utility](https://github.com/Elelabs/elelabs-zigbee-ezsp-utility)
-to use the bootloader method (untested).
+Check out [Sonoff firmware flashing](https://sonoff.tech/wp-content/uploads/2022/11/SONOFF-Zigbee-3.0-USB-dongle-plus-firmware-flashing-.pdf)
+to use the bootloader method, just replace the firmware with the one in this repo.
 
 2. Build `powertagd` with `make`.
 
@@ -75,3 +75,29 @@ in radio range should be automatically commissioned.
 - Improve firmware to be able to send write commands to PowerTags.
 For example to configure the direction of current flow.
 - Figure out the remaining unknown attributes (0x4000, 0x4013, ...) sent by PowerTags.
+
+## FAQ
+### How to pick the best channel ?
+The best channel is the one with the highest value in scan results (beware that value are negative).
+
+Given the following scan result
+```
+Energy scan result: channel 11: -72 dBm
+Energy scan result: channel 12: -73 dBm
+Energy scan result: channel 13: -36 dBm
+Energy scan result: channel 14: -33 dBm
+Energy scan result: channel 15: -37 dBm
+Energy scan result: channel 16: -50 dBm
+Energy scan result: channel 17: -40 dBm
+Energy scan result: channel 18: -40 dBm
+Energy scan result: channel 19: -49 dBm
+Energy scan result: channel 20: -50 dBm
+Energy scan result: channel 21: -76 dBm
+Energy scan result: channel 22: -79 dBm
+Energy scan result: channel 23: -80 dBm
+Energy scan result: channel 24: -80 dBm
+Energy scan result: channel 25: -72 dBm
+Energy scan result: channel 26: -27 dBm
+```
+
+The best channel is 26 then 14, the worst is 22.
