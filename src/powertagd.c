@@ -1,7 +1,3 @@
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
-
 #include <assert.h>
 #include <err.h>
 #include <getopt.h>
