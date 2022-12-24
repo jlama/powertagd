@@ -709,6 +709,8 @@ int main(int argc, char **argv)
 		printf("    channel:  %d\n", channel);
 		printf("    TX power: +%d dBm\n", txpower);
 		printf("    PAN id:   0x%04x\n", pan_id);
+		// HACK: wait for network to be UP
+		sleep(1);
 
 		// Generate random GP key.
 		EmberKey gp_key;
