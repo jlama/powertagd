@@ -14,13 +14,6 @@
 #include "zcl.h"
 #include "crypto/aes.h"
 
-// FIXME: remove this
-// Default serial device
-#ifdef __APPLE__
-#define SERIAL_DEV "/dev/cu.usbmodem202207081112181"
-#else
-#define SERIAL_DEV "/dev/ttyACM0"
-#endif
 // Default serial speed
 #define BAUDRATE 115200
 
@@ -595,7 +588,7 @@ static int parse_cmd_arg(const char *name)
 
 int main(int argc, char **argv)
 {
-	const char *serialdev = SERIAL_DEV;
+	const char *serialdev = NULL;
 	int verbosity = 1;
 	int cmd = CMD_DEFAULT;
 
@@ -618,6 +611,11 @@ int main(int argc, char **argv)
 	}
 	argv += optind;
 	argc -= optind;
+
+	if (serialdev == NULL) {
+		warnx("no serial device specified (-d)");
+		usage();
+	}
 
 	if (argc > 0) {
 		cmd = parse_cmd_arg(*argv);
