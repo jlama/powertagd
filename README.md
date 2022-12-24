@@ -6,16 +6,16 @@ Solution to read electrical measurements sent by Schneider PowerTag sensors.
 These devices communicate with ZigBee Green Power and require precise control
 of the timings to work reliably.
 
-A `Sonoff ZigBee Dongle-E` device with custom firmware is used as a gateway. The
-firmware is based on the NCP-UART firmware provided by Silicon Labs, modified to
-automatically send a special ACK reply which is specific to PowerTags.
+A `Sonoff ZigBee Dongle-E` device (not the -P model!) with custom firmware is
+used as a gateway. The firmware is based on the NCP-UART firmware provided by
+Silicon Labs, modified to automatically send a special ACK reply which is specific to PowerTags.
 
 Currently the firmware is tailored for `Sonoff ZigBee Dongle-E` devices, but can
 work on any devices using a Silicon Labs EFR32MGxx chip by adapting the pinout
 and rebuilding. Firmware sources can be provided on request.
 
 The `powertagd` software runs on the host and communicates with the dongle via
-USB/UART using the Silicon Labs `EZSP` protocol. It manages the ZigBee network,
+USB/UART using Silicon Labs `EZSP` protocol. It manages the ZigBee network,
 the commissioning of PowerTags, and processes the readings received from PowerTags.
 Each received measurement is simply printed to `stdout` in
 [InfluxDB Line Protocol](https://docs.influxdata.com/influxdb/cloud/reference/syntax/line-protocol/)
@@ -60,9 +60,6 @@ On macOS it should be something like `/dev/cu.usbmodemXXXXXXXX`
     Energy scan result: channel 26: -88 dBm
     ```
 
-__Warning:__ For now, please prefer choosing chanel 11, powertagd don't work well with other channel.<br>
-
-
 5. Create a ZigBee network on your preferred channel:
     ```
     powertagd -d /dev/xxx create <channel>
@@ -81,9 +78,9 @@ For example to configure the direction of current flow.
 
 ## FAQ
 ### How to pick the best channel ?
-The best channel is the one with the highest value in scan results (beware that value are negative).
+The best channel is the one with the highest value in scan results (beware that values are negative).
 
-Given the following scan result
+Given the following scan result:
 ```
 Energy scan result: channel 11: -72 dBm
 Energy scan result: channel 12: -73 dBm

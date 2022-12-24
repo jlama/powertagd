@@ -281,33 +281,6 @@ bool gp_parse_frame(const uint8_t *buf, uint8_t len, GpFrame *gpf)
 	return true;
 }
 
-static bool gp_handle_channel_request(GpFrame *gpf)
-{
-	if (!ctx.gp_allow_commissioning) {
-		LOG_DBG("gp: commissioning disabled, ignoring channel request");
-		return false;
-	}
-
-	if (gpf->payload_len != 1) {
-		LOG_ERR("gp: got Channel Request with invalid payload");
-		return false;
-	}
-
-	/* Channels are 0-indexed. i.e. radio channel 11 = 0. */
-	uint8_t next_channel = gpf->payload[0] & 0x0F;
-	uint8_t our_channel = ezsp_nwk_radio_channel();
-	assert(our_channel >= 11 && our_channel <= 26);
-	uint8_t our_channel0 = our_channel - 11;
-
-	if (next_channel != our_channel0) {
-		LOG_INFO("gp: steering source ID 0x%04x from channel %d to %d",
-		    gpf_source_id(gpf), next_channel+11, our_channel);
-		return true;
-	}
-
-	return gp_send(gpf_source_id(gpf), GPF_CMD_CHANNEL_CONFIG, &our_channel0, 1);
-}
-
 static bool gp_handle_commissioning_frame(GpFrame *gpf)
 {
 	LOG_INFO("gp: got commissioning frame from GPD 0x%04x", gpf_source_id(gpf));
@@ -521,7 +494,8 @@ static bool gp_process_insecure_frame(GpFrame *gpf)
 {
 	switch (gpf->cmd_id) {
 	case GPF_CMD_CHANNEL_REQUEST:
-		return gp_handle_channel_request(gpf);
+		// Ignore Channel Requests, they are handled in firmware.
+		return true;
 	case GPF_CMD_COMMISSIONING:
 		return gp_handle_commissioning_frame(gpf);
 	}
