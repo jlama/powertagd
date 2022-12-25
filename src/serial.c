@@ -47,6 +47,20 @@ void serial_open(const char *dev, speed_t baud)
 	opts.c_cc[VMIN] = 1;
 	opts.c_cc[VTIME] = 0;
 
+    switch (baud)
+    {
+        case 4800:   cfsetospeed(&opts, B4800);   break;
+        case 9600:   cfsetospeed(&opts, B9600);   break;
+        case 19200:  cfsetospeed(&opts, B19200);  break;
+        case 38400:  cfsetospeed(&opts, B38400);  break;
+        case 115200: cfsetospeed(&opts, B115200); break;
+        default:
+            LOG_WARN("warning: baud rate %u is not supported, using 9600.\n", baud);
+            cfsetospeed(&opts, B115200);
+            break;
+        }
+    cfsetispeed(&opts, cfgetospeed(&opts));
+
 	// Activate settings
 	if (tcsetattr(fd, TCSANOW, &opts) == -1)
 		LOG_FATAL("tty: configuration failed");
@@ -59,17 +73,7 @@ void serial_open(const char *dev, speed_t baud)
 		err(1, "ioctl(IOSSIOSPEED)");
 
 #elif defined(__linux__)
-#include <linux/serial.h>
-	struct serial_struct ser;
-	if (ioctl(fd, TIOCGSERIAL, &ser) == -1)
-		err(1, "ioctl(TIOCGSERIAL)");
-
-	ser.custom_divisor = ser.baud_base / (int)baud;
-	ser.flags &= ~ASYNC_SPD_MASK;
-	ser.flags |= ASYNC_SPD_CUST;
-	if (ioctl(fd, TIOCSSERIAL,  &ser) == -1)
-		err(1, "ioctl(TIOCSSERIAL)");
-
+    // Nothing specific to do for linux
 #else
 	#error "Serial not supported on this platform"
 #endif
