@@ -47,19 +47,18 @@ void serial_open(const char *dev, speed_t baud)
 	opts.c_cc[VMIN] = 1;
 	opts.c_cc[VTIME] = 0;
 
-    switch (baud)
-    {
-        case 4800:   cfsetospeed(&opts, B4800);   break;
-        case 9600:   cfsetospeed(&opts, B9600);   break;
-        case 19200:  cfsetospeed(&opts, B19200);  break;
-        case 38400:  cfsetospeed(&opts, B38400);  break;
-        case 115200: cfsetospeed(&opts, B115200); break;
-        default:
-            LOG_WARN("warning: baud rate %u is not supported, using 9600.\n", baud);
-            cfsetospeed(&opts, B115200);
-            break;
-        }
-    cfsetispeed(&opts, cfgetospeed(&opts));
+	switch (baud) {
+		case 4800:   cfsetospeed(&opts, B4800);   break;
+		case 9600:   cfsetospeed(&opts, B9600);   break;
+		case 19200:  cfsetospeed(&opts, B19200);  break;
+		case 38400:  cfsetospeed(&opts, B38400);  break;
+		case 115200: cfsetospeed(&opts, B115200); break;
+		default:
+			LOG_WARN("warning: baud rate %u is not supported, using 9600.\n", baud);
+			cfsetospeed(&opts, B115200);
+			break;
+	}
+	cfsetispeed(&opts, cfgetospeed(&opts));
 
 	// Activate settings
 	if (tcsetattr(fd, TCSANOW, &opts) == -1)
