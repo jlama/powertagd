@@ -6,17 +6,18 @@
 #include <fcntl.h>
 #include <poll.h>
 #include <unistd.h>
+#include <termios.h>
 
 #include "serial.h"
 #include "log.h"
 
 static int _fd = -1;
 
-void serial_open(const char *dev, speed_t baud)
+void serial_open(const char *dev, unsigned int baud)
 {
 	assert(baud > 0);
 
-	LOG_INFO("tty: opening '%s' at %d bauds", dev, (int)baud);
+	LOG_INFO("tty: opening '%s' at %u bauds", dev, baud);
 	int fd = open(dev, O_RDWR | O_NOCTTY /*| O_NONBLOCK*/);
 	if (fd == -1)
 		LOG_FATAL("tty: open '%s' failed: %s", dev, strerror(errno));
@@ -47,32 +48,24 @@ void serial_open(const char *dev, speed_t baud)
 	opts.c_cc[VMIN] = 1;
 	opts.c_cc[VTIME] = 0;
 
+	speed_t speed;
+	switch (baud) {
+	case 9600:   speed = B9600;   break;
+	case 19200:  speed = B19200;  break;
+	case 38400:  speed = B38400;  break;
+	case 115200: speed = B115200; break;
+	default:
+		LOG_FATAL("tty: baud rate %u is not supported", baud);
+	}
+	if (cfsetospeed(&opts, speed) != 0)
+		LOG_FATAL("tty: cfsetospeed failed");
+	if (cfsetispeed(&opts, speed) != 0)
+		LOG_FATAL("tty: cfsetispeed failed");
+
 	// Activate settings
 	if (tcsetattr(fd, TCSANOW, &opts) == -1)
 		LOG_FATAL("tty: configuration failed");
 	LOG_DBG("tty: link configured");
-
-#if defined(__APPLE__)
-#include <IOKit/serial/ioss.h>
-	LOG_DBG("tty: setting baud rate to %d", (int)baud);
-	if (ioctl(fd, IOSSIOSPEED, &baud, 1) == -1)
-		err(1, "ioctl(IOSSIOSPEED)");
-
-#elif defined(__linux__)
-#include <linux/serial.h>
-	struct serial_struct ser;
-	if (ioctl(fd, TIOCGSERIAL, &ser) == -1)
-		err(1, "ioctl(TIOCGSERIAL)");
-
-	ser.custom_divisor = ser.baud_base / (int)baud;
-	ser.flags &= ~ASYNC_SPD_MASK;
-	ser.flags |= ASYNC_SPD_CUST;
-	if (ioctl(fd, TIOCSSERIAL,  &ser) == -1)
-		err(1, "ioctl(TIOCSSERIAL)");
-
-#else
-	#error "Serial not supported on this platform"
-#endif
 
 	tcflush(fd, TCIOFLUSH);
 	tcdrain(fd);

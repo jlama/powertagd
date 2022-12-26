@@ -3,9 +3,8 @@
 
 #include <sys/types.h>
 #include <stdint.h>
-#include <termios.h>
 
-void serial_open(const char *dev, speed_t baud);
+void serial_open(const char *dev, unsigned int baud);
 void serial_close(void);
 
 size_t serial_available(void);

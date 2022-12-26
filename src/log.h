@@ -23,8 +23,10 @@ typedef enum {
 #define LOG_ERR(fmt, ...) \
     log_msg(LOG_LEVEL_ERR, fmt, ##__VA_ARGS__)
 
-#define LOG_FATAL(fmt, ...) \
-    log_msg(LOG_LEVEL_FATAL, fmt, ##__VA_ARGS__)
+#define LOG_FATAL(fmt, ...) do { \
+    log_msg(LOG_LEVEL_FATAL, fmt, ##__VA_ARGS__); \
+    __builtin_unreachable(); \
+} while (0)
 
 
 void log_init(void);
