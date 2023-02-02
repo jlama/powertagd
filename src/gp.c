@@ -287,7 +287,11 @@ static bool gp_handle_commissioning_frame(GpFrame *gpf)
 
 	// Sanity checks
 	if (!ctx.gp_allow_commissioning) {
-		LOG_ERR("gp: commissioning disabled, ignoring commissioning request");
+		static bool warned_commissioning_disabled = false;
+		if (!warned_commissioning_disabled) {
+			LOG_WARN("gp: commissioning disabled, ignoring commissioning request");
+			warned_commissioning_disabled = true;
+		}
 		return false;
 	}
 	if (gpf->auto_commissioning) {
@@ -323,10 +327,12 @@ static bool gp_handle_commissioning_frame(GpFrame *gpf)
 	}
 
 	bool has_gpd_key = (ext_options & GPF_COMMISSIONING_EXTOPT_HAS_GPD_KEY);
+	bool is_gpd_key_encrypted = (ext_options & GPF_COMMISSIONING_EXTOPT_GPD_ENC_KEY);
 	bool has_counter = (ext_options & GPF_COMMISSIONING_EXTOPT_HAS_GPD_OUT_COUNTER);
 	bool has_app_info = (options & GPF_COMMISSIONING_OPT_HAS_APP_INFO);
 
 	uint8_t gpd_key[EMBER_KEY_LEN] = {0};
+	uint32_t gpd_key_mic = 0;
 	uint32_t gpd_counter = 0;
 	uint16_t mfr_id = 0, model_id = 0;
 
@@ -337,6 +343,15 @@ static bool gp_handle_commissioning_frame(GpFrame *gpf)
 		}
 		memcpy(gpd_key, buf, EMBER_KEY_LEN);
 		buf += EMBER_KEY_LEN, len -= EMBER_KEY_LEN;
+
+		if (is_gpd_key_encrypted) {
+			if (len < 4) {
+				LOG_ERR("gp: bad commissioning frame: no GPD key MIC");
+				return false;
+			}
+			gpd_key_mic = u32_from_mem(buf);
+			buf += 4, len -= 4;
+		}
 	}
 	if (has_counter) {
 		if (len < 4) {
@@ -375,19 +390,8 @@ static bool gp_handle_commissioning_frame(GpFrame *gpf)
 			buf += 2, len -= 2;
 		}
 
-		if (appinfo & GPF_COMMISSIONING_APPINFO_GPD_CMDS) {
-			LOG_ERR("gp: unsupported commissioning frame: no support for App Info GPD Cmds");
-			return false;
-		}
-		if (appinfo & GPF_COMMISSIONING_APPINFO_CLUSTER_LIST) {
-			LOG_ERR("gp: unsupported commissioning frame: no support for App Info Cluster List");
-			return false;
-		}
-	}
-
-	if (len != 0) {
-		LOG_ERR("gp: bad commissioning frame: more data then expected (%zu bytes remaining)", len);
-		return false;
+		// Recent PowerTags include App Info GPD_CMDS and CLUSTER_LIST fields.
+		// Just ignore them.
 	}
 
 	LOG_INFO("gp: Starting commissioning for GPD 0x%04x", gpf_source_id(gpf));
@@ -443,10 +447,14 @@ static bool gp_handle_commissioning_frame(GpFrame *gpf)
 	if (has_counter)
 		LOG_DBG("gp:   GPD Outgoing Counter: %d", gpd_counter);
 
+	// Recent PowerTags provide a default key. We ignore it and use our own
+	// key instead.
+#if 0
 	if (has_gpd_key || (ext_options & GPF_COMMISSIONING_EXTOPT_GPD_ENC_KEY)) {
 		LOG_ERR("gp: unsupported commissioning with GPD key");
 		return false;
 	}
+#endif
 	if (sec_lvl == GP_SECURITY_LEVEL_1LSB_FC_SHORT_MIC) {
 		LOG_ERR("gp: unsupported commissioning security level 0x01");
 		return false;
