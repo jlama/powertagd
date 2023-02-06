@@ -2,7 +2,12 @@
  * ezsp_types.h
  */
 
+#ifndef EZSP_TYPES_H
+#define EZSP_TYPES_H
+
+#include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 typedef uint8_t EzspStatus;
 enum {
@@ -890,3 +895,14 @@ const char *ezsp_policy_id_to_str(EzspPolicyId id);
 
 const char *ember_status_to_str(EmberStatus status);
 const char *ember_node_type_to_str(EmberNodeType node);
+
+/*
+ * Check whether a key is all zeros.
+ */
+static inline bool ember_key_is_null(EmberKey *key)
+{
+	static EmberKey zero_key = {0};
+	return (memcmp(key->data, zero_key.data, sizeof(zero_key.data)) == 0);
+}
+
+#endif // EZSP_TYPES_H

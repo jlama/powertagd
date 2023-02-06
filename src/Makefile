@@ -1,4 +1,4 @@
-SRCS := \
+COMMON_SRCS := \
 	ash.c \
 	crc-ccitt.c \
 	ezsp.c \
@@ -6,11 +6,15 @@ SRCS := \
 	gp.c \
 	log.c \
 	serial.c \
-	powertagd.c \
+	powertag.c \
 	zcl.c
 
+POWERTAGD_SRCS   := $(COMMON_SRCS) powertagd.c
+POWERTAGCTL_SRCS := $(COMMON_SRCS) powertagctl.c
+
 HDRS := $(wildcard *.h)
-OBJS := $(SRCS:.c=.o)
+POWERTAGD_OBJS   := $(POWERTAGD_SRCS:.c=.o)
+POWERTAGCTL_OBJS := $(POWERTAGCTL_SRCS:.c=.o)
 
 CRYPTO_SRCS := $(wildcard crypto/*.c)
 CRYPTO_OBJS := $(CRYPTO_SRCS:.c=.o)
@@ -27,7 +31,7 @@ CFLAGS += -Wall -Wno-unused-function
 #CFLAGS += -DENABLE_MQTT
 #LDFLAGS := -lmosquitto
 
-all: powertagd
+all: powertagd powertagctl
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
@@ -38,12 +42,15 @@ libcrypto.a: $(CRYPTO_OBJS)
 test_crypto: libcrypto.a crypto/test_crypto.c
 	$(CC) $(CFLAGS) crypto/test_crypto.c libcrypto.a -o $@
 
-powertagd: $(OBJS) $(HDRS) libcrypto.a
-	$(CC) $(CFLAGS) $(OBJS) libcrypto.a $(LDFLAGS) -o $@
+powertagd: $(POWERTAGD_OBJS) $(HDRS) libcrypto.a
+	$(CC) $(CFLAGS) $(POWERTAGD_OBJS) libcrypto.a $(LDFLAGS) -o $@
+
+powertagctl: $(POWERTAGCTL_OBJS) $(HDRS) libcrypto.a
+	$(CC) $(CFLAGS) $(POWERTAGCTL_OBJS) libcrypto.a $(LDFLAGS) -o $@
 
 clean:
 	rm -f *.o crypto/*.o
 	rm -f libcrypto.a
-	rm -f powertagd test_crypto
+	rm -f powertagd powertagctl test_crypto
 
 .PHONY: all clean

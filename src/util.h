@@ -2,7 +2,10 @@
 #define UTIL_H
 
 #include <sys/time.h>
+
+#include <assert.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <time.h>
 
 static inline void u16_to_mem(uint16_t a, uint8_t *buf)
@@ -73,7 +76,7 @@ static inline uint64_t u64_from_mem(const uint8_t *buf)
 #endif
 
 /* Return the time difference in milliseconds between two timespecs. */
-static int timespec_diff(struct timespec *start, struct timespec *end)
+static inline int timespec_diff(struct timespec *start, struct timespec *end)
 {
 	struct timespec diff;
 	timespecsub(end, start, &diff);
@@ -81,7 +84,7 @@ static int timespec_diff(struct timespec *start, struct timespec *end)
 	return (diff.tv_sec * 1000) + (diff.tv_nsec / 1e6);
 }
 
-static int hex2int(char c)
+static inline int hex2int(char c)
 {
 	if (c >= '0' && c <= '9')
 		return c - '0';
@@ -131,12 +134,16 @@ static size_t hex2bin(const char *s, uint8_t *buf, size_t bufsz)
 
 static const char *key2str(uint8_t k[16])
 {
+	static const char hex[] = "0123456789abcdef";
 	static char str[16*2+1];
 
-	snprintf(str, sizeof(str),
-	    "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
-	    k[0], k[1],  k[2],  k[3],  k[4],  k[5],  k[6],  k[7],
-	    k[8], k[9], k[10], k[11], k[12], k[13], k[14], k[15]);
+	char *p = str;
+	for (int i = 0; i < 16; i++) {
+		p[0] = hex[k[i] >> 4];
+		p[1] = hex[k[i] & 0xf];
+		p += 2;
+	}
+	*p = '\0';
 	return str;
 }
 
@@ -154,6 +161,12 @@ static uint32_t arc4random(void)
 	uint32_t v;
 	arc4random_buf(&v, sizeof(v));
 	return v;
+}
+
+static const char *getprogname(void)
+{
+	extern char *__progname;
+	return __progname;
 }
 #endif
 

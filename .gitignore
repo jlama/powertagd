@@ -2,6 +2,7 @@
 *.a
 *.dSYM
 src/powertagd
+src/powertagctl
 src/test_crypto
 target
 Cargo.lock

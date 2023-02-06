@@ -9,10 +9,11 @@
 typedef uint16_t ZclClusterId;
 enum {
 	ZCL_CLUSTER_BASIC                   = 0x0000,
+	ZCL_CLUSTER_DEVICE_TEMP             = 0x0002,
+	ZCL_CLUSTER_IDENTIFY                = 0x0003,
 	ZCL_CLUSTER_METERING                = 0x0702,
 	ZCL_CLUSTER_ELECTRICAL_MEASUREMENTS = 0x0b04,
 	ZCL_CLUSTER_DIAGNOSTICS             = 0x0b05,
-	ZCL_CLUSTER_MFR_SPECIFIC            = 0xff14,
 };
 
 // Basic cluster attributes
@@ -31,6 +32,11 @@ enum {
 	ZCL_BASIC_SE_POWERTAG_SERIAL = 0xe004, // string
 	ZCL_BASIC_SE_POWERTAG_BRAND  = 0xe008, // string
 	ZCL_BASIC_SE_POWERTAG_MODEL  = 0xe009, // string
+};
+
+// Identify cluster attributes
+enum {
+	ZCL_IDENTIFY_TIME = 0x0000, // uint16, time in seconds
 };
 
 // Metering cluster attributes

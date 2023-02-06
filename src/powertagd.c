@@ -7,28 +7,11 @@
 #include <unistd.h>
 
 #include "ash.h"
-#include "gp.h"
 #include "log.h"
 #include "serial.h"
-#include "util.h"
 #include "zcl.h"
 #include "crypto/aes.h"
-
-// Default serial speed
-#define BAUDRATE 115200
-
-// ZCL attributes specific to Schneider Powertags.
-enum {
-	ZCL_SCHNEIDER_BREAKER_CAPACITY  = 0x0300, // in Amps, type: 16-bit unsigned int
-	ZCL_SCHNEIDER_POWERTAG_POSITION = 0x0700, // 0 = downstream, 1 = upstream - type: 8-bit bitmap
-};
-
-// Custom EZSP xNCP commands.
-enum {
-	XNCP_CMD_INIT_MULTI_RAIL = 0x0e,
-	XNCP_CMD_SET_GP_KEY      = 0x0f,
-	XNCP_CMD_GET_GP_KEY      = 0x1f,
-};
+#include "powertag.h"
 
 
 #ifdef ENABLE_MQTT
@@ -104,11 +87,6 @@ static void mqtt_close(void)
 #endif /* ENABLE_MQTT */
 
 
-static void ezsp_energy_scan_completed(EmberStatus es)
-{
-	exit((es == EMBER_SUCCESS) ? 0 : 1);
-}
-
 static bool handle_rx_gp_frame(const EzspFrame *frame)
 {
 	EmberStatus es;
@@ -121,7 +99,7 @@ static bool handle_rx_gp_frame(const EzspFrame *frame)
 	es = frame->data[0];
 	switch (es) {
 	case EMBER_UNPROCESSED:
-		LOG_DBG("ezsp: got unprocessed GP frame: %s", ember_status_to_str(es));
+		LOG_DBG("ezsp: got unprocessed GP frame (%s)", ember_status_to_str(es));
 		break;
 	case EMBER_NO_SECURITY:
 	case EMBER_SUCCESS:
@@ -171,10 +149,6 @@ static bool handle_raw_tx_complete_callback(const EzspFrame *frame)
 static bool ezsp_callback_handler(const EzspFrame *frame)
 {
 	switch (frame->hdr.frame_id) {
-	case EZSP_SCAN_COMPLETE_HANDLER:
-		ezsp_energy_scan_completed(frame->data[1]);
-		break;
-
 	case EZSP_GP_INCOMING_MESSAGE_HANDLER:
 		(void)handle_rx_gp_frame(frame);
 		break;
@@ -466,140 +440,25 @@ static bool gp_callback_handler(const GpFrame *f)
 	return false;
 }
 
-/*
- * Check whether a key is all zeros.
- */
-static inline bool ember_key_is_null(EmberKey *key)
-{
-	static EmberKey zero_key = {0};
-	return (memcmp(key->data, zero_key.data, sizeof(zero_key.data)) == 0);
-}
-
-/*
- * Retrieve the GP key from NCP.
- */
-static bool xncp_get_gp_key(EmberKey *gp_key)
-{
-	uint8_t cmd = XNCP_CMD_GET_GP_KEY;
-	ezsp_send_xncp_frame(&cmd, 1);
-
-	EzspXncpReply reply;
-	if (!ezsp_read_xncp_reply(&reply))
-		return false;
-	if (reply.es != EMBER_SUCCESS) {
-		LOG_ERR("powertagd: failed to retrieve GP key");
-		return false;
-	}
-	if (reply.len != 16) {
-		LOG_ERR("powertagd: bad XNCP_CMD_GET_GP_KEY reply: expected 16 bytes, got %u", reply.len);
-		return false;
-	}
-
-	memcpy(gp_key->data, reply.data, 16);
-	return true;
-}
-
-/*
- * Store the GP key in the NCP.
- */
-static bool xncp_set_gp_key(EmberKey *key)
-{
-	uint8_t cmd[1+EMBER_KEY_LEN];
-	cmd[0] = XNCP_CMD_SET_GP_KEY;
-	memcpy(cmd+1, key->data, EMBER_KEY_LEN);
-	ezsp_send_xncp_frame(cmd, sizeof(cmd));
-
-	EzspXncpReply reply;
-	if (!ezsp_read_xncp_reply(&reply))
-		return false;
-	if (reply.es != EMBER_SUCCESS) {
-		LOG_ERR("powertagd: failed to set GP key");
-		return false;
-	}
-
-	LOG_DBG("powertagd: GP key set to 0x%s", key2str(key->data));
-	return true;
-}
-
-static bool xncp_init(void)
-{
-	uint8_t cmd = XNCP_CMD_INIT_MULTI_RAIL;
-	ezsp_send_xncp_frame(&cmd, 1);
-
-	EzspXncpReply reply;
-	if (!ezsp_read_xncp_reply(&reply))
-		return false;
-	if (reply.es != EMBER_SUCCESS) {
-		LOG_ERR("powertagd: failed to initialize xNCP multi-rail");
-		return false;
-	}
-
-	LOG_DBG("powertagd: xncp initialized");
-	return true;
-}
-
 static void usage(void)
 {
-	printf("usage: powertagd [-qv] [-d device] [cmd]\n\n");
-	printf("commands:\n");
-	printf("    create <channel> [txpower]   Create a new network\n");
-	printf("    leave                        Leave the ZigBee network and clear keys\n");
-	printf("    scan                         Scan ZigBee channels\n");
-	printf("    info                         Print ZigBee network informations\n\n");
-
-	printf("    set-gp-key <key>             Set the GP security key (from a 16-bytes hex string)\n");
-	printf("    get-gp-key                   Print the GP security key\n");
+	printf("Usage: powertagd [-qv] [-d device]\n");
 	exit(1);
-}
-
-enum {
-	CMD_DEFAULT = 0,
-	CMD_CREATE_NET,
-	CMD_LEAVE_NET,
-	CMD_SCAN_NET,
-	CMD_PRINT_INFOS,
-	CMD_SET_GP_KEY,
-	CMD_GET_GP_KEY,
-};
-
-static int parse_cmd_arg(const char *name)
-{
-	if (name == NULL || *name == 0)
-		return CMD_DEFAULT;
-
-	struct {
-		const char *name;
-		int cmd;
-	} cmd_table[] = {
-		{ "create", CMD_CREATE_NET },
-		{ "leave",  CMD_LEAVE_NET },
-		{ "scan",   CMD_SCAN_NET },
-		{ "info",   CMD_PRINT_INFOS },
-		{ "set-gp-key", CMD_SET_GP_KEY },
-		{ "get-gp-key", CMD_GET_GP_KEY },
-		{ NULL, 0 },
-	};
-	for (unsigned i = 0; cmd_table[i].name != NULL; i++) {
-		if (strcmp(name, cmd_table[i].name) == 0)
-			return cmd_table[i].cmd;
-	}
-	return -1;
 }
 
 int main(int argc, char **argv)
 {
 	const char *serialdev = NULL;
-	int verbosity = 1;
-	int cmd = CMD_DEFAULT;
+	int verbose = 1;
 
 	int ch;
 	while ((ch = getopt(argc, argv, "d:qv")) != -1) {
 		switch (ch) {
 		case 'q':
-			verbosity = 0;
+			verbose = 0;
 			break;
 		case 'v':
-			verbosity = 2;
+			verbose = 2;
 			break;
 		case 'd':
 			serialdev = optarg;
@@ -617,15 +476,8 @@ int main(int argc, char **argv)
 		usage();
 	}
 
-	if (argc > 0) {
-		cmd = parse_cmd_arg(*argv);
-		if (cmd == -1)
-			errx(1, "unknown command '%s'", *argv);
-		argv++, argc--;
-	}
-
 	log_init();
-	switch (verbosity) {
+	switch (verbose) {
 	case 0:
 		log_set_level(LOG_LEVEL_WARN);
 		break;
@@ -636,128 +488,29 @@ int main(int argc, char **argv)
 		log_set_level(LOG_LEVEL_DEBUG);
 		break;
 	}
+
 	// Line-buffered stdout
 	setlinebuf(stdout);
 
 	serial_open(serialdev, BAUDRATE);
-
 	ash_init(serial_read, serial_write);
 	if (!ash_reset_ncp())
 		LOG_FATAL("ash: could not connect to NCP");
 
+	/*
+	 * Initialize the ZigBee stack and try joining an existing network.
+	 */
 	if (!ezsp_init(ash_read, ash_write, ezsp_callback_handler))
 		LOG_FATAL("EZSP initialization failed");
-
-	if (cmd == CMD_GET_GP_KEY) {
-		EmberKey gp_key;
-		if (!xncp_get_gp_key(&gp_key))
-			return 1;
-		printf("GP key: 0x%s\n", key2str(gp_key.data));
-		return 0;
-	}
-	if (cmd == CMD_SET_GP_KEY) {
-		if (argc < 1)
-			errx(1, "set-gp-key requires an argument");
-		EmberKey gp_key;
-		if (hex2bin(*argv, gp_key.data, EMBER_KEY_LEN) != EMBER_KEY_LEN)
-			errx(1, "set-gp-key: invalid key format");
-		printf("Setting GP key to 0x%s\n", key2str(gp_key.data));
-		return !xncp_set_gp_key(&gp_key);
-	}
-
-	/*
-	 * The ZigBee stack needs to be initialized for the other commands.
-	 */
 	if (!ezsp_stack_init())
 		return 1;
-
-	if (cmd == CMD_SCAN_NET) {
-		printf("Starting energy scan...\n");
-		if (!ezsp_start_energy_scan(0)) {
-			printf("Energy scan failed!\n");
-			return 1;
-		}
-		while (1)
-			ezsp_read_callbacks(1500);
-		// NOT REACHED
-	}
-	if (cmd == CMD_CREATE_NET) {
-		uint8_t channel = 11;
-		uint8_t txpower = 0;
-
-		if (argc < 1) {
-			warnx("create: invalid arguments");
-			printf("usage: powertagd create <channel> [tx_power]\n");
-			exit(1);
-		}
-
-		channel = strtol(argv[0], NULL, 10);
-		if (channel < 11 || channel > 26)
-			errx(1, "create: invalid channel '%s'. Must be between 11 and 26.", argv[0]);
-
-		if (argc > 1) {
-			txpower = strtol(argv[1], NULL, 10);
-			if (txpower < 0 || txpower > 20)
-				errx(1, "create: invalid TX power '%s'. Must be between 0 and +20 dBm.", argv[1]);
-		}
-
-		uint16_t pan_id = 0;
-		if (!ezsp_network_create(&pan_id, channel, txpower))
-			return 1;
-
-		printf("ZigBee network successfully created!\n");
-		printf("    channel:  %d\n", channel);
-		printf("    TX power: +%d dBm\n", txpower);
-		printf("    PAN id:   0x%04x\n", pan_id);
-		// HACK: wait for network to be UP
-		sleep(1);
-
-		// Generate random GP key.
-		EmberKey gp_key;
-		arc4random_buf(gp_key.data, sizeof(gp_key.data));
-		return !xncp_set_gp_key(&gp_key);
-	}
-
-	/*
-	 * Try joining an existing network.
-	 */
-	EmberStatus es;
-	if (!ezsp_network_init(&es))
-		return false;
-	if (es == EMBER_NOT_JOINED) {
-		LOG_ERR("powertagd: no network found, you need to create one first");
+	if (!powertag_net_init(gp_callback_handler))
 		return 1;
-	}
-	usleep(500*1000);
-
-	if (cmd == CMD_PRINT_INFOS) {
-		// TODO
-		return 0;
-	}
 
 #ifdef ENABLE_MQTT
 	if (mqtt_client_init() != 0)
 		return 1;
 #endif
-
-	/* Initialize Green Power stack with the key stored in the NCP. */
-	EmberKey gpd_key = {0};
-	if (!xncp_init())
-		return 1;
-	if (!xncp_get_gp_key(&gpd_key))
-		return 1;
-	if (ember_key_is_null(&gpd_key)) {
-		LOG_ERR( "powertagd: no GP key has been configured yet");
-		LOG_INFO("powertagd: run 'powertagd set-gp-key <key>' to set one");
-		return 1;
-	}
-	gp_init(&gpd_key, gp_callback_handler);
-
-	// At the moment we don't use the built-in sink capabilities of the NCP,
-	// we handle the decryption/encryption of GP frames ourselves.
-	//gp_sink_init();
-
-	gp_set_allow_commissioning(true);
 
 	while (1) {
 		ezsp_read_callbacks(3000);

@@ -1,3 +1,6 @@
+#ifndef EZSP_H
+#define EZSP_H
+
 #include <sys/types.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -80,3 +83,5 @@ bool ezsp_read_reply_status(uint16_t expected_fid, uint8_t *es);
 bool ezsp_read_xncp_reply(EzspXncpReply *r);
 
 bool ezsp_read_callbacks(int timeout_ms);
+
+#endif // EZSP_H
