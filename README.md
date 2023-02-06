@@ -14,12 +14,14 @@ Currently the firmware is tailored for `Sonoff ZigBee Dongle-E` devices, but can
 work on any devices using a Silicon Labs EFR32MGxx chip by adapting the pinout
 and rebuilding. Firmware sources can be provided on request.
 
-The `powertagd` software runs on the host and communicates with the dongle via
-USB/UART using Silicon Labs `EZSP` protocol. It manages the ZigBee network,
-the commissioning of PowerTags, and processes the readings received from PowerTags.
-Each received measurement is simply printed to `stdout` in
+The `powertagd` command runs on the host and communicates with the dongle via
+USB/UART using Silicon Labs `EZSP` protocol. It processes the readings received
+from PowerTags. Each received measurement is simply printed to `stdout` in
 [InfluxDB Line Protocol](https://docs.influxdata.com/influxdb/cloud/reference/syntax/line-protocol/)
 format. The output is intended to be piped to another app to process the data as needed.
+
+The `powertagctl` command is used to create the ZigBee network, commission
+and configure the PowerTags.
 
 
 ## Quickstart
@@ -31,7 +33,7 @@ __Warning:__ Be prepared to hook a JTAG debugger to recover the dongle if anythi
 Check out [Sonoff firmware flashing](https://sonoff.tech/wp-content/uploads/2022/11/SONOFF-Zigbee-3.0-USB-dongle-plus-firmware-flashing-.pdf)
 to use the bootloader method, just replace the firmware with the one in this repo.
 
-2. Build `powertagd` with `make`.
+2. Build `powertagd` and `powertagctl` by running `make` in the `src` directory.
 
 3. Connect the USB dongle and determine where it was mapped in `/dev`.<br>
 On Linux it should be something like `/dev/ttyACM0`<br>
@@ -39,7 +41,7 @@ On macOS it should be something like `/dev/cu.usbmodemXXXXXXXX`
 
 4. (Optional) Run a network scan and pick the "best" channel:
     ```
-    $ powertagd -d /dev/xxx scan
+    $ powertagctl -d /dev/xxx scan
     ...
     Starting energy scan...
     Energy scan result: channel 11: -64 dBm
@@ -62,18 +64,21 @@ On macOS it should be something like `/dev/cu.usbmodemXXXXXXXX`
 
 5. Create a ZigBee network on your preferred channel:
     ```
-    powertagd -d /dev/xxx create <channel>
+    powertagctl -d /dev/xxx create <channel>
     ```
 
-Finally run `powertagd -d /dev/xxx` to start the network. All unpaired PowerTags
-in radio range should be automatically commissioned.
+6. Commission PowerTags:
+    ```
+    powertagctl -d /dev/xxx pair
+    ```
+
+Finally run `powertagd -d /dev/xxx` to start processing the PowerTags readings.
+
 
 ## TODO
 
 - Clean up code
 - Finish MQTT support
-- Improve firmware to be able to send write commands to PowerTags.
-For example to configure the direction of current flow.
 - Figure out the remaining unknown attributes (0x4000, 0x4013, ...) sent by PowerTags.
 
 ## FAQ
