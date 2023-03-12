@@ -249,8 +249,8 @@ static void process_electrical_meas_cluster_report(ZclAttrList *list, FILE *fp)
 {
 	assert(fp != NULL);
 
-#if 0
 	uint16_t freq_mul = 1, freq_div = 1;
+#if 0
 	uint32_t nps_power_mul = 1, nps_power_div = 1;
 #endif
 	uint16_t voltage_mul = 1, voltage_div = 1;
@@ -266,13 +266,14 @@ static void process_electrical_meas_cluster_report(ZclAttrList *list, FILE *fp)
 	for (int i = 0; i < list->count; i++) {
 		ZclAttr *attr = &list->attrs[i];
 		switch (attr->id) {
-#if 0
+
 		case ZCL_EMR_FREQUENCY_MULTIPLIER:
 			freq_mul = attr->value.u64;
 			break;
 		case ZCL_EMR_FREQUENCY_DIVISOR:
 			freq_div = attr->value.u64;
 			break;
+#if 0
 		case ZCL_EMR_POWER_MULTIPLIER:
 			nps_power_mul = attr->value.u64;
 			break;
@@ -316,6 +317,11 @@ static void process_electrical_meas_cluster_report(ZclAttrList *list, FILE *fp)
 		case ZCL_EMR_AC_POWER_MULTIPLIER:
 		case ZCL_EMR_AC_POWER_DIVISOR:
 			continue;
+
+		case ZCL_EMR_AC_FREQUENCY:
+			attr->value.flt = attr->value.u64 * freq_mul / (float)freq_div;
+			attr->type = ZCL_ATTR_TYPE_FLOAT_32;
+			break;
 
 		case ZCL_EMR_AC_P1_LINE_CURRENT:
 		case ZCL_EMR_AC_P1_RMS_CURRENT:
