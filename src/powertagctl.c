@@ -553,12 +553,13 @@ int main(int argc, char **argv)
 		usage();
 	}
 
-	if (argc > 0) {
-		cmd = parse_cmd_arg(*argv);
-		if (cmd == -1)
-			errx(1, "unknown command '%s'", *argv);
-		argv++, argc--;
-	}
+	if (argc < 1)
+		errx(1, "no command given");
+
+	cmd = parse_cmd_arg(*argv);
+	if (cmd == -1)
+		errx(1, "unknown command '%s'", *argv);
+	argv++, argc--;
 
 	log_init();
 	switch (verbose) {
