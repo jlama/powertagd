@@ -29,6 +29,8 @@ static const char *cluster_basic_attr_name(ZclAttrId id)
 		return "sw_build";
 
 	// Schneider PowerTag
+	case ZCL_BASIC_SE_POWERTAG_FW_VER:
+		return "fw_ver";
 	case ZCL_BASIC_SE_POWERTAG_HW_VER:
 		return "hw_ver";
 	case ZCL_BASIC_SE_POWERTAG_SERIAL:

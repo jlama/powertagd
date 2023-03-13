@@ -28,7 +28,8 @@ enum {
 	ZCL_BASIC_SW_BUILD      = 0x4000, // string
 
 	// Schneider PowerTag
-	ZCL_BASIC_SE_POWERTAG_HW_VER = 0xe001, // string
+	ZCL_BASIC_SE_POWERTAG_FW_VER = 0xe001, // string
+	ZCL_BASIC_SE_POWERTAG_HW_VER = 0xe002, // string
 	ZCL_BASIC_SE_POWERTAG_SERIAL = 0xe004, // string
 	ZCL_BASIC_SE_POWERTAG_BRAND  = 0xe008, // string
 	ZCL_BASIC_SE_POWERTAG_MODEL  = 0xe009, // string
