@@ -178,9 +178,15 @@ static void process_basic_cluster_report(ZclAttrList *list, FILE *fp)
 
 	for (int i = 0; i < list->count; i++) {
 		ZclAttr *attr = &list->attrs[i];
-		fprintf(fp, "%s=%s,",
-		    zcl_attr_name(ZCL_CLUSTER_BASIC, attr->id),
-		    zcl_attr_format_value(attr));
+		const char *name = zcl_attr_name(ZCL_CLUSTER_BASIC, attr->id);
+		/*
+		 * Some PowerTags firmwares report a bunch of non-standard attributes.
+		 * Just ignore them.
+		 */
+		if (name == NULL)
+			LOG_DBG("zcl basic cluster: unknown attribute 0x%04x", attr->id);
+		else
+			fprintf(fp, "%s=%s,", name, zcl_attr_format_value(attr));
 	}
 
 	//LOG_INFO("[0x%08x] Basic: %s", src, str);
