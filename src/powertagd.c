@@ -227,9 +227,8 @@ static void process_metering_cluster_report(ZclAttrList *list, FILE *fp)
 		}
 
 		const char *name = zcl_attr_name(ZCL_CLUSTER_METERING, attr->id);
-		if (*name == '\0') {
-			fprintf(fp, "0x%04x=%s,",
-			    attr->id, zcl_attr_format_value(attr)/*, zcl_attr_type_name(attr->orig_type)*/);
+		if (name == NULL) {
+			fprintf(fp, "0x%04x=%s,", attr->id, zcl_attr_format_value(attr));
 			continue;
 		}
 
@@ -348,20 +347,18 @@ static void process_electrical_meas_cluster_report(ZclAttrList *list, FILE *fp)
 		}
 
 		const char *name = zcl_attr_name(ZCL_CLUSTER_ELECTRICAL_MEASUREMENTS, attr->id);
-		if (*name == '\0') {
-			fprintf(fp, "0x%04x=%s,",
-			    attr->id, zcl_attr_format_value(attr)/*, zcl_attr_type_name(attr->orig_type)*/);
+		if (name == NULL) {
+			fprintf(fp, "0x%04x=%s,", attr->id, zcl_attr_format_value(attr));
 			continue;
 		}
 
-		fprintf(fp, "%s=%s,",
-		    name, zcl_attr_format_value(attr));
+		fprintf(fp, "%s=%s,", name, zcl_attr_format_value(attr));
 	}
 
 	//LOG_INFO("[0x%08x] Electrical Measurements: %s", src, str);
 }
 
-static bool gpf_process_mfr_specific_reporting(const GpFrame *f)
+static void gpf_process_mfr_specific_reporting(const GpFrame *f)
 {
 	LOG_DBG("gp: got MFR_ATTRIBUTE_REPORTING frame");
 
@@ -372,7 +369,7 @@ static bool gpf_process_mfr_specific_reporting(const GpFrame *f)
 
 	if (len < 4) {
 		LOG_ERR("gp: MFR_ATTRIBUTE_REPORTING frame: payload too small");
-		return false;
+		return;
 	}
 
 	uint16_t mfr_id = u16_from_mem(buf);
@@ -381,17 +378,17 @@ static bool gpf_process_mfr_specific_reporting(const GpFrame *f)
 
 	if (mfr_id != MFR_ID_SCHNEIDER) {
 		LOG_WARN("gp: report from unknown mfr id 0x%04x, ignoring", mfr_id);
-		return true;
+		return;
 	}
 
 	if (len < 3) {
 		LOG_ERR("gp: MFR_ATTRIBUTE_REPORTING frame: no attributes");
-		return false;
+		return;
 	}
 
 	ZclAttrList *list = zcl_parse_attr_list(buf, len);
 	if (list == NULL)
-		return false;
+		return;
 
 	char str[1024] = {0};
 	FILE *fp = fmemopen(str, sizeof(str), "w");
@@ -409,14 +406,14 @@ static bool gpf_process_mfr_specific_reporting(const GpFrame *f)
 
 	default:
 		LOG_WARN("gp: MFR_ATTRIBUTE_REPORTING: unknown cluster ID 0x%04x", cluster_id);
-		return false;
+		return;
 	}
 
 	zcl_attr_list_free(list);
 	fclose(fp);
 
 	if (str[0] == '\0')
-		return false;
+		return;
 
 	// Drop last comma
 	len = strlen(str);
@@ -424,26 +421,28 @@ static bool gpf_process_mfr_specific_reporting(const GpFrame *f)
 		str[len-1] = '\0';
 
 	printf("powertag,id=0x%08x %s %lu\n", srcid, str, timestamp);
-	return true;
 }
 
-static bool gpf_process_mfr_multi_cluster_reporting(const GpFrame *f)
+static void gpf_process_mfr_multi_cluster_reporting(const GpFrame *f)
 {
 	LOG_DBG("gp: got MFR_MULTI_CLUSTER_REPORTING frame");
 
 	// TODO
-	return true;
 }
 
 static bool gp_callback_handler(const GpFrame *f)
 {
 	switch (f->cmd_id) {
 	case GPF_CMD_MANUFACTURER_ATTRIBUTE_REPORTING:
-		return gpf_process_mfr_specific_reporting(f);
+		gpf_process_mfr_specific_reporting(f);
+		break;
 	case GPF_CMD_MANUFACTURER_MULTI_CLUSTER_REPORTING:
-		return gpf_process_mfr_multi_cluster_reporting(f);
+		gpf_process_mfr_multi_cluster_reporting(f);
+		break;
+	default:
+		return false;
 	}
-	return false;
+	return true;
 }
 
 static void usage(void)

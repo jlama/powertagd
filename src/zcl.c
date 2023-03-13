@@ -41,7 +41,7 @@ static const char *cluster_basic_attr_name(ZclAttrId id)
 		return "model";
 	}
 
-	return "";
+	return NULL;
 }
 
 static const char *cluster_metering_attr_name(ZclAttrId id)
@@ -79,7 +79,7 @@ static const char *cluster_metering_attr_name(ZclAttrId id)
 		return "energy_p3_rx";
 	}
 
-	return "";
+	return NULL;
 }
 
 static const char *cluster_emr_attr_name(ZclAttrId id)
@@ -233,7 +233,7 @@ static const char *cluster_emr_attr_name(ZclAttrId id)
 		return "voltage_phase_ac";
 	}
 
-	return "";
+	return NULL;
 }
 
 const char *zcl_attr_name(ZclClusterId cluster, ZclAttrId id)
@@ -246,8 +246,8 @@ const char *zcl_attr_name(ZclClusterId cluster, ZclAttrId id)
 	case ZCL_CLUSTER_ELECTRICAL_MEASUREMENTS:
 		return cluster_emr_attr_name(id);
 	default:
-		LOG_WARN("ZclAttrIdo_str: unknown cluster ID 0x%04x", cluster);
-		return "unknown";
+		LOG_WARN("zcl_attr_name: unknown cluster ID 0x%04x", cluster);
+		return NULL;
 	}
 }
 
