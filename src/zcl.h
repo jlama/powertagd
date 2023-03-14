@@ -161,7 +161,8 @@ enum {
 	ZCL_EMR_AC_VOLTAGE_PHASE_BC = 0x4c00,
 	ZCL_EMR_AC_VOLTAGE_PHASE_CA = 0x4d00,
 
-	ZCL_EMR_AC_VOLTAGE_LOSS     = 0x4800, // bitmap16 = 0x2
+	// TODO: figure out the bitmap values for overload and undervoltage.
+	ZCL_EMR_POWERTAG_ALARM = 0x4800, // bitmap16 (0x2 = voltage loss)
 };
 
 // Diagnostics cluster attributes

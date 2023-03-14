@@ -231,6 +231,8 @@ static const char *cluster_emr_attr_name(ZclAttrId id)
 		return "voltage_phase_bc";
 	case ZCL_EMR_AC_VOLTAGE_PHASE_CA:
 		return "voltage_phase_ac";
+	case ZCL_EMR_POWERTAG_ALARM:
+		return "alarm";
 	}
 
 	return NULL;
