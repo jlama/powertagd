@@ -364,6 +364,36 @@ static void process_electrical_meas_cluster_report(ZclAttrList *list, FILE *fp)
 	//LOG_INFO("[0x%08x] Electrical Measurements: %s", src, str);
 }
 
+static void process_powertag_cluster_report(ZclAttrList *list, FILE *fp)
+{
+	assert(fp != NULL);
+
+	if (list->count == 0) {
+		LOG_ERR("process_powertag_cluster_report: no attributes");
+		return;
+	}
+
+	for (int i = 0; i < list->count; i++) {
+		ZclAttr *attr = &list->attrs[i];
+		const char *name = NULL;
+		switch (attr->id) {
+		case ZCL_POWERTAG_BREAKER_CAPACITY:
+			name = "breaker_capacity";
+			break;
+		case ZCL_POWERTAG_MOUNT_POSITION:
+			name = "mount_position";
+			break;
+		default:
+			break;
+		}
+
+		if (name == NULL)
+			LOG_DBG("PowerTag cluster: unknown attribute 0x%04x", attr->id);
+		else
+			fprintf(fp, "%s=%s,", name, zcl_attr_format_value(attr));
+	}
+}
+
 static void gpf_process_mfr_specific_reporting(const GpFrame *f)
 {
 	LOG_DBG("gp: got MFR_ATTRIBUTE_REPORTING frame");
@@ -409,6 +439,12 @@ static void gpf_process_mfr_specific_reporting(const GpFrame *f)
 	case ZCL_CLUSTER_ELECTRICAL_MEASUREMENTS:
 		process_electrical_meas_cluster_report(list, fp);
 		break;
+	case ZCL_CLUSTER_POWERTAG:
+		process_powertag_cluster_report(list, fp);
+		break;
+	// This cluster only contains the "report interval" attribute, ignore it.
+	case ZCL_CLUSTER_POWERTAG_2:
+		return;
 
 	default:
 		LOG_WARN("gp: MFR_ATTRIBUTE_REPORTING: unknown cluster ID 0x%04x", cluster_id);

@@ -9,17 +9,23 @@
 #define BAUDRATE 115200
 
 // Schneider-specific cluster ID for PowerTags attributes below.
-#define ZCL_CLUSTER_POWERTAG 0xff14
+#define ZCL_CLUSTER_POWERTAG   0xff14
+#define ZCL_CLUSTER_POWERTAG_2 0xff15
 
 // ZCL attributes specific to Schneider Powertags.
 enum {
-	// ZCL_POWERTAG_REPORT_INTERVAL   = 0x0000, // Report interval in seconds, type: uint16, cluster ID: 0xff15
+	ZCL_POWERTAG_REPORT_INTERVAL   = 0x0000, // Report interval in seconds, type: uint16, cluster ID: 0xff15
+
 	ZCL_POWERTAG_BREAKER_CAPACITY  = 0x0300, // in Amps, type: uint16
 	ZCL_POWERTAG_MOUNT_POSITION    = 0x0700, // 0 = downstream, 1 = upstream, type: 8-bit bitmap
-	// TODO: 0x0701 - not sure what this is...
-	// This is sent as a "Write Attribute" command by the Wiser gateway
-	// shortly after commissioning a PowerTag, with cluster ID 0xff14 and a
-	// 8-bit bitmap value of 0x01. Maybe a reset of counter values?
+	/*
+	 * TODO: 0x0701 - not sure what this is...
+	 * This is sent as a "Write Attribute" command by the Wiser gateway
+	 * shortly after commissioning a PowerTag, with cluster ID 0xff14 and a
+	 * 8-bit bitmap value of 0x01.
+	 * At first I thought it was used to reset counters, but after testing,
+	 * it's not...
+	 */
 };
 
 // Custom EZSP xNCP commands.
