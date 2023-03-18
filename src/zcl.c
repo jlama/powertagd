@@ -48,9 +48,9 @@ static const char *cluster_metering_attr_name(ZclAttrId id)
 {
 	switch (id) {
 	case ZCL_METERING_TOTAL_ENERGY_DELIVERED:
-		return "energy_delivered";
+		return "total_energy_tx";
 	case ZCL_METERING_TOTAL_ENERGY_RECEIVED:
-		return "energy_received";
+		return "total_energy_rx";
 	case ZCL_METERING_POWER_FACTOR:
 		return "power_factor";
 
@@ -63,20 +63,37 @@ static const char *cluster_metering_attr_name(ZclAttrId id)
 		return "divisor";
 
 	// PowerTag specific
-	case ZCL_METERING_SE_POWERTAG_ENERGY_DELIVERED_PHASE_A:
-		return "energy_p1_tx";
-	case ZCL_METERING_SE_POWERTAG_ENERGY_RECEIVED_PHASE_A:
-		return "energy_p1_rx";
+	case ZCL_METERING_SE_TOTAL_ENERGY_DELIVERED_PHASE_A:
+		return "total_energy_p1_tx";
+	case ZCL_METERING_SE_TOTAL_ENERGY_DELIVERED_PHASE_B:
+		return "total_energy_p2_tx";
+	case ZCL_METERING_SE_TOTAL_ENERGY_DELIVERED_PHASE_C:
+		return "total_energy_p3_tx";
 
-	case ZCL_METERING_SE_POWERTAG_ENERGY_DELIVERED_PHASE_B:
-		return "energy_p2_tx";
-	case ZCL_METERING_SE_POWERTAG_ENERGY_RECEIVED_PHASE_B:
-		return "energy_p2_rx";
+	case ZCL_METERING_SE_TOTAL_ENERGY_RECEIVED_PHASE_A:
+		return "total_energy_p1_rx";
+	case ZCL_METERING_SE_TOTAL_ENERGY_RECEIVED_PHASE_B:
+		return "total_energy_p2_rx";
+	case ZCL_METERING_SE_TOTAL_ENERGY_RECEIVED_PHASE_C:
+		return "total_energy_p3_rx";
 
-	case ZCL_METERING_SE_POWERTAG_ENERGY_DELIVERED_PHASE_C:
-		return "energy_p3_tx";
-	case ZCL_METERING_SE_POWERTAG_ENERGY_RECEIVED_PHASE_C:
-		return "energy_p3_rx";
+	case ZCL_METERING_SE_PARTIAL_ENERGY_DELIVERED:
+		return "partial_energy_tx";
+	case ZCL_METERING_SE_PARTIAL_ENERGY_DELIVERED_PHASE_A:
+		return "partial_energy_p1_tx";
+	case ZCL_METERING_SE_PARTIAL_ENERGY_DELIVERED_PHASE_B:
+		return "partial_energy_p2_tx";
+	case ZCL_METERING_SE_PARTIAL_ENERGY_DELIVERED_PHASE_C:
+		return "partial_energy_p2_tx";
+
+	case ZCL_METERING_SE_PARTIAL_ENERGY_RECEIVED:
+		return "partial_energy_rx";
+	case ZCL_METERING_SE_PARTIAL_ENERGY_RECEIVED_PHASE_A:
+		return "partial_energy_p1_rx";
+	case ZCL_METERING_SE_PARTIAL_ENERGY_RECEIVED_PHASE_B:
+		return "partial_energy_p2_rx";
+	case ZCL_METERING_SE_PARTIAL_ENERGY_RECEIVED_PHASE_C:
+		return "partial_energy_p3_rx";
 	}
 
 	return NULL;
