@@ -1,3 +1,4 @@
+DESTDIR ?= /usr/local
 COMMON_SRCS := \
 	ash.c \
 	crc-ccitt.c \
@@ -48,9 +49,12 @@ powertagd: $(POWERTAGD_OBJS) $(HDRS) libcrypto.a
 powertagctl: $(POWERTAGCTL_OBJS) $(HDRS) libcrypto.a
 	$(CC) $(CFLAGS) $(POWERTAGCTL_OBJS) libcrypto.a $(LDFLAGS) -o $@
 
+install: powertagd powertagctl
+	install -m755 $^ $(DESTDIR)/bin/
+
 clean:
 	rm -f *.o crypto/*.o
 	rm -f libcrypto.a
 	rm -f powertagd powertagctl test_crypto
 
-.PHONY: all clean
+.PHONY: all install clean
