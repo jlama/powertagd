@@ -39,7 +39,9 @@ to use the bootloader method, just replace the firmware with the one in this rep
 On Linux it should be something like `/dev/ttyACM0`<br>
 On macOS it should be something like `/dev/cu.usbmodemXXXXXXXX`
 
-4. (Optional) Run a network scan and pick the "best" channel:
+4. (Optional) Run a network scan and choose a channel. The closer the dBm value is
+    to 0, the stronger the signal. In the following example the best picks would
+    be channel 12 or 13.
     ```
     $ powertagctl -d /dev/xxx scan
     ...
@@ -74,35 +76,49 @@ On macOS it should be something like `/dev/cu.usbmodemXXXXXXXX`
 
 Finally run `powertagd -d /dev/xxx` to start processing the PowerTags readings.
 
+## Units
+
+- voltage: V
+- current: A
+- active_power: W
+- apparent_power: VA
+- reactive_power: VAR
+- power_factor: -100% to +100%
+- energy: kWh
+
+## InfluxDB
+
+Some sample Flux queries for InfluxDB/Grafana.
+
+### Get power values for a specific PowerTag id
+```
+from(bucket: "powertag")
+  |> range(start: v.timeRangeStart, stop:v.timeRangeStop)
+  |> filter(fn: (r) => r.id == "0x12345678" and r._field == "total_power_active")
+  |> aggregateWindow(every: v.windowPeriod, fn: mean)
+```
+Where "powertag" is the bucket name and 0x12345678 is the PowerTag id.
+
+### Get daily energy usage for the past 30 days
+```
+import "date"
+import "timezone"
+
+option location = timezone.location(name: "Europe/Paris")
+
+start = date.truncate(t: -30d, unit: 1d)
+stop = date.truncate(t: 1d, unit: 1d)
+
+from(bucket: "powertag")
+  |> range(start: start, stop: stop)
+  |> filter(fn: (r) => r.id == "0x12345678" and r._field == "total_energy_rx")
+  |> aggregateWindow(every: 1d, fn: spread, createEmpty: true)
+  |> timeShift(duration: -1s)
+
+```
+
 
 ## TODO
 
-- Clean up code
+- Improve ash protocol error handling
 - Finish MQTT support
-- Figure out the remaining unknown attributes (0x4000, 0x4013, ...) sent by PowerTags.
-
-## FAQ
-### How to pick the best channel ?
-The best channel is the one with the highest value in scan results (beware that values are negative).
-
-Given the following scan result:
-```
-Energy scan result: channel 11: -72 dBm
-Energy scan result: channel 12: -73 dBm
-Energy scan result: channel 13: -36 dBm
-Energy scan result: channel 14: -33 dBm
-Energy scan result: channel 15: -37 dBm
-Energy scan result: channel 16: -50 dBm
-Energy scan result: channel 17: -40 dBm
-Energy scan result: channel 18: -40 dBm
-Energy scan result: channel 19: -49 dBm
-Energy scan result: channel 20: -50 dBm
-Energy scan result: channel 21: -76 dBm
-Energy scan result: channel 22: -79 dBm
-Energy scan result: channel 23: -80 dBm
-Energy scan result: channel 24: -80 dBm
-Energy scan result: channel 25: -72 dBm
-Energy scan result: channel 26: -27 dBm
-```
-
-The best channel is 26 then 14, the worst is 22.
