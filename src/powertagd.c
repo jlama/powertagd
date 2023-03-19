@@ -396,6 +396,13 @@ static void process_metering_cluster_report(ZclAttrList *list, FILE *fp)
 		case ZCL_METERING_MULTIPLIER:
 		case ZCL_METERING_DIVISOR:
 			continue;
+
+		case ZCL_METERING_POWER_FACTOR:
+			// Newer PowerTag firmwares send -128 as power factor value when no
+			// current is flowing, probably to mean invalid value.
+			if (attr->value.i64 == -128)
+				attr->value.i64 = 100;
+			break;
 		default:
 			break;
 		}
