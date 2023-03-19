@@ -43,7 +43,7 @@ test_crypto: libcrypto.a crypto/test_crypto.c
 	$(CC) $(CFLAGS) crypto/test_crypto.c libcrypto.a -o $@
 
 powertagd: $(POWERTAGD_OBJS) $(HDRS) libcrypto.a
-	$(CC) $(CFLAGS) $(POWERTAGD_OBJS) libcrypto.a $(LDFLAGS) -o $@
+	$(CC) $(CFLAGS) $(POWERTAGD_OBJS) libcrypto.a -lpthread $(LDFLAGS) -o $@
 
 powertagctl: $(POWERTAGCTL_OBJS) $(HDRS) libcrypto.a
 	$(CC) $(CFLAGS) $(POWERTAGCTL_OBJS) libcrypto.a $(LDFLAGS) -o $@
