@@ -254,6 +254,41 @@ static bool powertag_queue_write_mount_position(GpSrcId devid, uint8_t pos)
 	return true;
 }
 
+/*
+ * Queue a write request to reset PowerTag partial_energy values.
+ */
+static bool powertag_queue_reset_energy(GpSrcId devid)
+{
+	static uint8_t write_frame[] = {
+		GPF_CMD_WRITE_ATTRIBUTES, 0x02, /* Options field (manufacturer field present) */
+		MFR_ID_SCHNEIDER     & 0xff, MFR_ID_SCHNEIDER     >> 8, /* Manufacturer ID */
+		ZCL_CLUSTER_METERING & 0xff, ZCL_CLUSTER_METERING >> 8, /* Cluster ID */
+		9, /* Record length */
+		0x00, 0x40, /* Attribute ID */
+		ZCL_ATTR_TYPE_U48, /* Data type */
+		0, 0, 0, 0, 0, 0, /* Value */
+	};
+
+	uint8_t cmd[1+5+sizeof(write_frame)];
+	cmd[0] = XNCP_CMD_PUSH_TX_QUEUE;
+	cmd[1] = GP_APP_SOURCE_ID;
+	u32_to_mem(devid, cmd+2);
+	memcpy(cmd+6, write_frame, sizeof(write_frame));
+
+	ezsp_send_xncp_frame(cmd, sizeof(cmd));
+
+	EzspXncpReply reply;
+	if (!ezsp_read_xncp_reply(&reply))
+		return false;
+	if (reply.es != EMBER_SUCCESS) {
+		LOG_ERR("0x%02x: failed queuing reset frame", devid);
+		return false;
+	}
+
+	LOG_DBG("0x%02x: queued reset frame", devid);
+	return true;
+}
+
 static bool powertag_wait_reply(int timeout_ms)
 {
 	struct timespec start, now;
@@ -287,6 +322,7 @@ static void usage(void)
 	printf("    pair                         Allow pairing of PowerTags\n");
 	printf("    identify <dev>               Blink the PowerTag during 10s\n");
 	printf("    invert-flow <dev>            Invert the PowerTag current flow direction\n");
+	printf("    reset-energy <dev>           Reset PowerTag partial_energy values\n");
 	exit(1);
 }
 
@@ -300,6 +336,7 @@ enum {
 	CMD_PAIR,
 	CMD_IDENTIFY,
 	CMD_INVERT_FLOW,
+	CMD_RESET_ENERGY,
 };
 
 static int parse_cmd_arg(const char *name)
@@ -319,6 +356,7 @@ static int parse_cmd_arg(const char *name)
 		{ "pair", CMD_PAIR },
 		{ "identify", CMD_IDENTIFY },
 		{ "invert-flow", CMD_INVERT_FLOW },
+		{ "reset-energy", CMD_RESET_ENERGY },
 		{ NULL, 0 },
 	};
 	for (unsigned i = 0; cmd_table[i].name != NULL; i++) {
@@ -523,6 +561,28 @@ int cmd_invert_flow(int argc, char **argv)
 	return 0;
 }
 
+int cmd_reset_energy(int argc, char **argv)
+{
+	if (argc != 1)
+		errx(1, "reset-energy: no device id specified");
+
+	uint8_t buf[4];
+	if (hex2bin(*argv, buf, sizeof(buf)) != sizeof(buf))
+		errx(1, "reset-energy: invalid device id");
+
+	powertag_dev = ntohl(u32_from_mem(buf));
+	if (!powertag_queue_reset_energy(powertag_dev))
+		return 1;
+
+	if (!powertag_wait_reply(10000)) {
+		LOG_ERR("Could not find PowerTag 0x%02x. Is it on and commissioned?", powertag_dev);
+		return 1;
+	}
+
+	LOG_INFO("PowerTag 0x%02x: partial_energy values were reset.", powertag_dev);
+	return 0;
+}
+
 int main(int argc, char **argv)
 {
 	const char *serialdev = NULL;
@@ -620,6 +680,8 @@ int main(int argc, char **argv)
 		return cmd_identify(argc, argv);
 	case CMD_INVERT_FLOW:
 		return cmd_invert_flow(argc, argv);
+	case CMD_RESET_ENERGY:
+		return cmd_reset_energy(argc, argv);
 	default:
 		break;
 	}
