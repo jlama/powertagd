@@ -681,7 +681,7 @@ static int parse_output_arg(const char *arg)
 
 static void usage(void)
 {
-	printf("Usage: powertagd [-qv] [-d device]\n");
+	printf("Usage: powertagd [-qv] [-d device] [-o output]\n");
 	exit(1);
 }
 

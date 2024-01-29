@@ -1,7 +1,5 @@
 ## powertagd
 
-**WARNING: Use at your own risks. This is currently unfinished and unpolished.**
-
 Solution to read electrical measurements sent by Schneider PowerTag sensors.
 These devices communicate with ZigBee Green Power and require precise control
 of the timings to work reliably.
@@ -16,9 +14,9 @@ and rebuilding. Firmware sources can be provided on request.
 
 The `powertagd` command runs on the host and communicates with the dongle via
 USB/UART using Silicon Labs `EZSP` protocol. It processes the readings received
-from PowerTags. Each received measurement is simply printed to `stdout` in
+from PowerTags. By default, each received measurement is simply printed to `stdout` in
 [InfluxDB Line Protocol](https://docs.influxdata.com/influxdb/cloud/reference/syntax/line-protocol/)
-format. The output is intended to be piped to another app to process the data as needed.
+format. This output is intended to be piped to another app to process the data as needed.
 
 The `powertagctl` command is used to create the ZigBee network, commission
 and configure the PowerTags.
@@ -88,7 +86,16 @@ Finally run `powertagd -d /dev/xxx` to start processing the PowerTags readings.
 
 ## InfluxDB
 
-Some sample Flux queries for InfluxDB/Grafana.
+`powertagd` has built-in support to send metrics directly to InfluxDB:
+```
+powertagd -d /dev/xxx -o influxdb \
+  --url http://127.0.0.1:8086 \
+  --org <OrgName> \
+  --bucket <BucketName> \
+  --token <XXX>
+```
+
+Below some sample Flux queries for InfluxDB/Grafana.
 
 ### Get power values for a specific PowerTag id
 ```
