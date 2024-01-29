@@ -10,7 +10,7 @@ Silicon Labs, modified to automatically send a special ACK reply which is specif
 
 Currently the firmware is tailored for `Sonoff ZigBee Dongle-E` devices, but can
 work on any devices using a Silicon Labs EFR32MGxx chip by adapting the pinout
-and rebuilding. Firmware sources can be provided on request.
+and rebuilding.
 
 The `powertagd` command runs on the host and communicates with the dongle via
 USB/UART using Silicon Labs `EZSP` protocol. It processes the readings received
