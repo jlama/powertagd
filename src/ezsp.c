@@ -966,6 +966,17 @@ bool ezsp_network_create(uint16_t *pan_id, uint8_t channel, uint8_t tx_power)
 	}
 
 	LOG_DBG("ezsp: network created: PAN 0x%04x, channel %d", *pan_id, channel);
+
+	// Wait for network UP status.
+	if (!ezsp_read_callbacks(EZSP_TIMEOUT)) {
+		LOG_ERR("ezsp: network still not up");
+		return false;
+	}
+	if (ctx.stack_state != EMBER_NETWORK_UP) {
+		LOG_ERR("ezsp: failed to initialize network");
+		return false;
+	}
+
 	return true;
 }
 

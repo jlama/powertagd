@@ -65,7 +65,7 @@ enum {
 
 	// Frame has been sent again. Only valid for DATA frames.
 	ASH_CB_FLAG_RETX      = 0x08,
-	// Host is not ready to received callbacks.
+	// Host is not ready to receive callbacks.
 	// Only valid for ACK and NAK frames sent by host.
 	ASH_CB_FLAG_NOT_READY = 0x08,
 };
@@ -587,7 +587,7 @@ static bool ash_process_frame(uint8_t *buf, size_t len, AshFrame *frame)
 		// TODO
 	}
 
-	// Update the next ackNum we need to sent.
+	// Update the next ackNum we need to send.
 	uint8_t last_rx_frame_seq = ctx.rx_frame_seq;
 	ctx.rx_frame_seq = (cb_frame_num(frame->cb) + 1) & 0x7;
 
